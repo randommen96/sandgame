@@ -2,7 +2,7 @@ import { E, ELEMENTS, SWATCH } from './elements.js';
 
 // Toolbar: element buttons (extended per task as elements are implemented).
 export function buildToolbar(container, state) {
-  const order = [E.SAND, E.WATER, E.WALL, E.EMPTY];
+  const order = [E.SAND, E.WATER, E.WOOD, E.FIRE, E.LAVA, E.WALL, E.EMPTY];
   container.innerHTML = '';
   for (const id of order) {
     const btn = document.createElement('button');

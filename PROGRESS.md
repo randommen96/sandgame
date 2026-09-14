@@ -20,11 +20,11 @@
 - [x] Density-based swap so sand sinks through water/lava
 
 ## Task 4: Interactive Elements & Reactions (Fire, Wood, Cinder)
-- [ ] Wood: static flammable solid
-- [ ] Fire: ignites wood, emits smoke, finite lifetime, extinguished by water
-- [ ] Burned-out fire can leave Cinder (ash) residue; cinder falls like sand
-- [ ] Water + Fire → Steam / extinguish
-- [ ] Lava element (slow glowing liquid) + Water → Stone (+ steam)
+- [x] Wood: static flammable solid
+- [x] Fire: ignites wood, emits smoke, finite lifetime, extinguished by water
+- [x] Burned-out fire can leave Cinder (ash) residue; cinder falls like sand
+- [x] Water + Fire → Steam / extinguish
+- [x] Lava element (slow glowing liquid) + Water → Stone (+ steam); lava also ignites wood
 
 ## Task 5: UI, Controls & Polish
 - [ ] Toolbar: element buttons (Sand, Water, Wood, Fire, Wall, Lava, Eraser), brush size control
@@ -42,6 +42,8 @@
 | 2026-09-14 | Task 2: browser interaction — painted sand line falls to floor row 149, mass conserved, zero errors | PASS — screenshot assets/screenshots/task2-sand.png |
 | 2026-09-14 | Task 3: `npm test` (26 unit tests incl. water leveling, density sink, gas rise/dissipate) | PASS |
 | 2026-09-14 | Task 3: browser interaction — sand + water phases, conserved counts, zero errors | PASS — screenshot assets/screenshots/task3-water.png |
+| 2026-09-14 | Task 4: `npm test` (34 unit tests incl. fire burnout/spread, extinguish, lava reactions) | PASS |
+| 2026-09-14 | Task 4: browser interaction — sand + water + fire phases (wood plank ignites, smoke emits), zero errors | PASS — screenshot assets/screenshots/task4-fire.png |
 
 ## Known Issues
 (none yet)

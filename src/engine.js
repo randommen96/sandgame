@@ -1,4 +1,4 @@
-import { E, ELEMENTS } from './elements.js';
+import { E, ELEMENTS, DEFAULT_LIFE } from './elements.js';
 
 // One `step()` = one fixed simulation tick (60 Hz).
 // Scan order: bottom-to-top so falling particles are not re-processed within the same tick.
@@ -27,10 +27,13 @@ export class Engine {
         if (grid.updated[i]) continue; // already moved this tick
         switch (id) {
           case E.SAND: this.updateSand(x, y, i); break;
+          case E.CINDER: this.updateSand(x, y, i); break; // cinder falls like sand
           case E.WATER: this.updateWater(x, y, i); break;
           case E.SMOKE:
           case E.STEAM: this.updateGas(x, y, i); break;
-          default: break; // static or not-yet-implemented elements do nothing
+          case E.FIRE: this.updateFire(x, y, i); break;
+          case E.LAVA: this.updateLava(x, y, i); break;
+          default: break; // static (wall, wood, stone) or not-yet-implemented
         }
       }
     }
@@ -53,6 +56,103 @@ export class Engine {
   }
 
   // --- Element updates ---
+
+  // The 8 surrounding offsets.
+  static NEIGHBORS8 = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+
+  updateFire(x, y, i) {
+    const grid = this.grid;
+    // Lifetime: burns out after DEFAULT_LIFE ticks.
+    if (grid.life[i] > 0 && --grid.life[i] === 0) {
+      // Burned-out fire sometimes leaves a cinder residue.
+      if (this.rng() < 0.35) grid.set(x, y, E.CINDER, 0, grid.variation[i]);
+      else grid.set(x, y, E.EMPTY);
+      return;
+    }
+    // Water contact extinguishes the fire and puffs steam.
+    if (this.neighborHas(x, y, E.WATER)) {
+      grid.set(x, y, E.STEAM, DEFAULT_LIFE[E.STEAM], grid.variation[i]);
+      return;
+    }
+    // Ignite flammable neighbors (wood).
+    for (const [dx, dy] of Engine.NEIGHBORS8) {
+      const nx = x + dx, ny = y + dy;
+      if (!grid.inBounds(nx, ny)) continue;
+      const j = grid.idx(nx, ny);
+      if (grid.cells[j] === E.WOOD) {
+        grid.set(nx, ny, E.FIRE, DEFAULT_LIFE[E.FIRE], grid.variation[j]);
+      }
+    }
+    // Emit a wisp of smoke upward now and then.
+    if (y > 0 && grid.get(x, y - 1) === E.EMPTY && this.rng() < 0.2) {
+      grid.set(x, y - 1, E.SMOKE, DEFAULT_LIFE[E.SMOKE], Math.floor(this.rng() * 256));
+    }
+  }
+
+  updateLava(x, y, i) {
+    const grid = this.grid;
+    // Reactions with neighbors first (before any movement).
+    for (const [dx, dy] of Engine.NEIGHBORS8) {
+      const nx = x + dx, ny = y + dy;
+      if (!grid.inBounds(nx, ny)) continue;
+      const j = grid.idx(nx, ny);
+      if (grid.cells[j] === E.WATER) {
+        // Lava + water -> stone; the water boils off as steam.
+        grid.set(nx, ny, E.STEAM, DEFAULT_LIFE[E.STEAM], grid.variation[j]);
+        grid.set(x, y, E.STONE, 0, grid.variation[i]);
+        return;
+      }
+      if (grid.cells[j] === E.WOOD) {
+        grid.set(nx, ny, E.FIRE, DEFAULT_LIFE[E.FIRE], grid.variation[j]);
+      }
+    }
+    // Lava is a thick liquid: it only attempts to move on some ticks.
+    if (this.rng() >= 0.25) return;
+    const w = grid.w;
+    if (y + 1 < grid.h) {
+      const below = i + w;
+      if (this.canEnter(E.LAVA, grid.cells[below])) {
+        this.moveTo(i, below);
+        return;
+      }
+      const dir = this.rng() < 0.5 ? -1 : 1;
+      for (const d of [dir, -dir]) {
+        const nx = x + d;
+        if (nx < 0 || nx >= w) continue;
+        const j = below + d;
+        if (this.canEnter(E.LAVA, grid.cells[j])) {
+          this.moveTo(i, j);
+          return;
+        }
+      }
+    }
+    // Slow horizontal spread (thicker than water: max 2 cells/tick).
+    const dir2 = this.rng() < 0.5 ? -1 : 1;
+    for (const d of [dir2, -dir2]) {
+      let target = -1;
+      for (let s = 1; s <= 2; s++) {
+        const nx = x + d * s;
+        if (nx < 0 || nx >= w) break;
+        if (grid.cells[i + d * s] !== E.EMPTY) break;
+        target = i + d * s;
+      }
+      if (target !== -1) {
+        this.moveTo(i, target);
+        return;
+      }
+    }
+  }
+
+  // True if any of the 8 neighbors holds `id`.
+  neighborHas(x, y, id) {
+    const grid = this.grid;
+    for (const [dx, dy] of Engine.NEIGHBORS8) {
+      const nx = x + dx, ny = y + dy;
+      if (!grid.inBounds(nx, ny)) continue;
+      if (grid.cells[grid.idx(nx, ny)] === id) return true;
+    }
+    return false;
+  }
 
   // Water: falls (displacing denser particles like sand), slides diagonally,
   // then spreads horizontally up to 4 cells per tick so pools level out.

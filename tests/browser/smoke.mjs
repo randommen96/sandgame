@@ -123,6 +123,38 @@ try {
     });
     check('water falls to the floor and is conserved', winfo.count === paintedW && winfo.maxRow === winfo.h - 1,
       `count=${winfo.count} maxRow=${winfo.maxRow} floor=${winfo.floorCount}`);
+
+    // Phase 3: fire. Clear, paint a wood plank, ignite its left end.
+    await page.evaluate(() => { window.__sand.state.element = 4; window.__sand.grid.clear(); }); // E.WOOD === 4
+    const y3 = box.y + box.h * 0.5;
+    await page.mouse.move(box.x + box.w * 0.35, y3);
+    await page.mouse.down();
+    for (let i = 1; i <= 20; i++) await page.mouse.move(box.x + box.w * (0.35 + 0.016 * i), y3);
+    await page.mouse.up();
+    const plank = await page.evaluate(() => {
+      const g = window.__sand.grid;
+      let minx = Infinity, row = -1, count = 0;
+      for (let yy = 0; yy < g.h; yy++) for (let xx = 0; xx < g.w; xx++) {
+        if (g.cells[yy * g.w + xx] === 4) { minx = Math.min(minx, xx); row = yy; count++; }
+      }
+      return { minx, row, count };
+    });
+    check('painting created a wood plank', plank.count > 10 && plank.minx > 2, `wood=${plank.count} minx=${plank.minx}`);
+    // Stamp fire in the empty cell just left of the plank's left end.
+    await page.evaluate(() => { window.__sand.state.element = 5; }); // E.FIRE === 5
+    const px = box.x + (plank.minx - 0.5) * (box.w / 200); // center of cell minx-1
+    const py = box.y + (plank.row + 0.5) * (box.h / 150);
+    await page.mouse.move(px, py);
+    await page.mouse.down();
+    await new Promise((r) => setTimeout(r, 300)); // continuous pour stamps the fire cell
+    await page.mouse.up();
+    await new Promise((r) => setTimeout(r, 800));
+    const fireInfo = await page.evaluate(() => {
+      const g = window.__sand.grid;
+      return { wood: g.count(4), fire: g.count(5), smoke: g.count(6) };
+    });
+    check('fire ignites the wood and emits smoke', fireInfo.fire > 0 && fireInfo.wood < plank.count && fireInfo.smoke > 0,
+      `wood=${fireInfo.wood} fire=${fireInfo.fire} smoke=${fireInfo.smoke}`);
   }
 
   // Screenshot for the record.
