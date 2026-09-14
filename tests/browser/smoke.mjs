@@ -72,6 +72,35 @@ try {
   });
   check('FPS overlay is visible on the stage', fpsElVisible);
 
+  if (process.argv.includes('--interaction')) {
+    const box = await page.$eval('#sim', (el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    });
+    // Paint a horizontal line of sand at ~20% height across the middle third.
+    const y = box.y + box.h * 0.2;
+    await page.mouse.move(box.x + box.w * 0.4, y);
+    await page.mouse.down();
+    for (let i = 1; i <= 25; i++) await page.mouse.move(box.x + box.w * (0.4 + 0.016 * i), y);
+    await page.mouse.up();
+    const painted = await page.evaluate(() => window.__sand.grid.count(1)); // E.SAND === 1
+    check('painting created sand particles', painted > 0, `count=${painted}`);
+    // Wait long enough for every grain to reach the floor (row h-1).
+    await new Promise((r) => setTimeout(r, 4000));
+    const info = await page.evaluate(() => {
+      const g = window.__sand.grid;
+      let maxRow = -1, count = 0;
+      for (let yy = 0; yy < g.h; yy++) {
+        for (let xx = 0; xx < g.w; xx++) {
+          if (g.cells[yy * g.w + xx] === 1) { count++; if (yy > maxRow) maxRow = yy; }
+        }
+      }
+      return { count, maxRow, h: g.h };
+    });
+    check('painted sand falls to the floor and stays there', info.count === painted && info.maxRow === info.h - 1,
+      `count=${info.count} maxRow=${info.maxRow}`);
+  }
+
   // Screenshot for the record.
   const shotArg = process.argv[2] === '--shot' ? process.argv[3] : null;
   if (shotArg) {

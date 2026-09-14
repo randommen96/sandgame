@@ -26,8 +26,8 @@ export class Engine {
         if (id === E.EMPTY || ELEMENTS[id].static) continue;
         if (grid.updated[i]) continue; // already moved this tick
         switch (id) {
-          // Element updates are added incrementally in later tasks.
-          default: break;
+          case E.SAND: this.updateSand(x, y, i); break;
+          default: break; // static or not-yet-implemented elements do nothing
         }
       }
     }
@@ -47,5 +47,30 @@ export class Engine {
     this.grid.swap(i, j);
     this.grid.updated[i] = 1;
     this.grid.updated[j] = 1;
+  }
+
+  // --- Element updates ---
+
+  // Sand: falls straight down; if blocked, slides diagonally into an open
+  // below-left/below-right cell (randomized priority to avoid bias).
+  updateSand(x, y, i) {
+    const grid = this.grid;
+    const w = grid.w;
+    if (y + 1 >= grid.h) return; // resting on the floor
+    const below = i + w;
+    if (this.canEnter(E.SAND, grid.cells[below])) {
+      this.moveTo(i, below);
+      return;
+    }
+    const dir = this.rng() < 0.5 ? -1 : 1;
+    for (const d of [dir, -dir]) {
+      const nx = x + d;
+      if (nx < 0 || nx >= w) continue;
+      const j = below + d;
+      if (this.canEnter(E.SAND, grid.cells[j])) {
+        this.moveTo(i, j);
+        return;
+      }
+    }
   }
 }

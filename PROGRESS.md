@@ -10,9 +10,9 @@
 - [x] Node-based unit tests for grid & loop invariants
 
 ## Task 2: Basic Particle Physics (Sand & Walls)
-- [ ] Sand falls straight down, slides diagonally when blocked (randomized L/R priority)
-- [ ] Static Wall element blocks all particles
-- [ ] Mouse/touch paint interaction (click + drag spawns active element, line interpolation)
+- [x] Sand falls straight down, slides diagonally when blocked (randomized L/R priority)
+- [x] Static Wall element blocks all particles
+- [x] Mouse/touch paint interaction (click + drag spawns active element, line interpolation)
 
 ## Task 3: Liquids & Gaseous Elements
 - [ ] Water flows down, spreads sideways, levels out; displaced by denser particles
@@ -38,6 +38,8 @@
 |------|-------|--------|
 | 2026-09-14 | Task 1: `npm test` (15 unit tests) | PASS |
 | 2026-09-14 | Task 1: headless Chrome smoke (canvas, 60 FPS, zero console errors) | PASS — screenshot assets/screenshots/task1-initial.png |
+| 2026-09-14 | Task 2: `npm test` (21 unit tests incl. sand gravity / no-double-move / border safety) | PASS |
+| 2026-09-14 | Task 2: browser interaction — painted sand line falls to floor row 149, mass conserved, zero errors | PASS — screenshot assets/screenshots/task2-sand.png |
 
 ## Known Issues
 (none yet)

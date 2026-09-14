@@ -42,3 +42,18 @@ export const DEFAULT_LIFE = Object.freeze({
   [E.SMOKE]: 120,
   [E.STEAM]: 70,
 });
+
+// Representative colors for toolbar swatches.
+export const SWATCH = Object.freeze({
+  [E.EMPTY]: '#3a4152',
+  [E.SAND]: '#deb46e',
+  [E.WALL]: '#7c8492',
+  [E.WATER]: '#3478dc',
+  [E.WOOD]: '#825c34',
+  [E.FIRE]: '#ff9c3c',
+  [E.SMOKE]: '#707076',
+  [E.LAVA]: '#ff9824',
+  [E.STONE]: '#686a70',
+  [E.STEAM]: '#b2bcd0',
+  [E.CINDER]: '#4a423c',
+});
