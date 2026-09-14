@@ -2,6 +2,7 @@
   "name": "falling-sand-game",
   "version": "1.0.0",
   "description": "Browser-based falling sand physics game (vanilla JS + Canvas)",
+  "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
     "test": "node --test",
