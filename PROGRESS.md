@@ -27,11 +27,11 @@
 - [x] Lava element (slow glowing liquid) + Water → Stone (+ steam); lava also ignites wood
 
 ## Task 5: UI, Controls & Polish
-- [ ] Toolbar: element buttons (Sand, Water, Wood, Fire, Wall, Lava, Eraser), brush size control
-- [ ] Controls: Clear canvas, Pause/Step, FPS counter overlay
-- [ ] Keyboard shortcuts (1-7 elements, [ ] brush, Space pause/step, C clear)
-- [ ] Color variation per particle for organic texture; fire/lava flicker + glow pass
-- [ ] Final verification: 60 FPS, zero console errors, all interactions reliable
+- [x] Toolbar: element buttons (Sand, Water, Wood, Fire, Wall, Lava, Eraser), brush size control (slider, 1-8)
+- [x] Controls: Clear canvas button, Pause/Resume + Step buttons, FPS counter overlay
+- [x] Keyboard shortcuts (1-7 elements by toolbar order, [ ] brush size, Space pause/resume, C clear); Step advances one tick while paused
+- [x] Color variation per particle for organic texture; fire/lava flicker + additive blurred glow pass
+- [x] Final verification: 60 FPS, zero console errors, all interactions reliable
 
 ## Verification Log
 | Date | Check | Result |
@@ -44,6 +44,9 @@
 | 2026-09-14 | Task 3: browser interaction — sand + water phases, conserved counts, zero errors | PASS — screenshot assets/screenshots/task3-water.png |
 | 2026-09-14 | Task 4: `npm test` (34 unit tests incl. fire burnout/spread, extinguish, lava reactions) | PASS |
 | 2026-09-14 | Task 4: browser interaction — sand + water + fire phases (wood plank ignites, smoke emits), zero errors | PASS — screenshot assets/screenshots/task4-fire.png |
+| 2026-09-14 | Task 5: `npm test` (34 unit tests) | PASS |
+| 2026-09-14 | Task 5: browser UI controls — keyboard element/brush/clear/pause/step, slider sync, frame freeze on pause, exact +1 tick step, zero errors | PASS — screenshot assets/screenshots/task5-final.png |
+| 2026-09-14 | Task 5: glow pass pixel check (halo lifts pixels adjacent to fire), sustained 60 FPS across repeated runs | PASS |
 
 ## Known Issues
 (none yet)

@@ -2,7 +2,7 @@ import { Grid } from './grid.js';
 import { Engine } from './engine.js';
 import { mulberry32 } from './rng.js';
 import { Renderer } from './renderer.js';
-import { buildToolbar } from './ui.js';
+import { buildToolbar, selectElement, setPausedUI, syncBrushSlider, ELEMENT_ORDER, MIN_BRUSH, MAX_BRUSH } from './ui.js';
 import { E, DEFAULT_LIFE } from './elements.js';
 
 // Fixed simulation resolution; CSS scales it up crisply (image-rendering: pixelated).
@@ -19,11 +19,51 @@ const grid = new Grid(SIM_W, SIM_H);
 const engine = new Engine(grid, mulberry32((Date.now() & 0x7fffffff) | 1));
 const renderer = new Renderer(canvas, grid);
 
-// UI state (brush size is added in the polish task).
-const state = { element: E.SAND, brushRadius: 1 };
-buildToolbar(toolbarEl, state);
+// UI state.
+const state = { element: E.SAND, brushRadius: 1, paused: false };
 
-let running = true;
+// --- Simulation controls ---------------------------------------------------
+
+function togglePause() {
+  state.paused = !state.paused;
+  setPausedUI(state.paused);
+}
+
+// Step once; if the sim is running, pause first so the step is visible.
+function stepOnce() {
+  if (!state.paused) togglePause();
+  engine.step();
+}
+
+function clearAll() {
+  grid.clear();
+}
+
+buildToolbar(toolbarEl, state, { onPauseToggle: togglePause, onStep: stepOnce, onClear: clearAll });
+
+// --- Keyboard shortcuts ----------------------------------------------------
+// 1-7 pick element, [ ] brush size, Space pause/step, C clear.
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault(); // also stops focused buttons from re-triggering
+    togglePause();
+    return;
+  }
+  if (e.key >= '1' && e.key <= '7') {
+    selectElement(state, ELEMENT_ORDER[Number(e.key) - 1]);
+    return;
+  }
+  if (e.key === '[' || e.key === ']') {
+    const d = e.key === ']' ? 1 : -1;
+    state.brushRadius = Math.max(MIN_BRUSH, Math.min(MAX_BRUSH, state.brushRadius + d));
+    syncBrushSlider(state.brushRadius);
+    return;
+  }
+  if (e.key === 'c' || e.key === 'C') {
+    clearAll();
+  }
+});
+
 let accumulator = 0;
 let lastTime = performance.now();
 
@@ -110,7 +150,7 @@ function loop(now) {
   lastTime = now;
   if (dt > 250) dt = 250; // tab was hidden — don't fast-forward the world
 
-  if (running) {
+  if (!state.paused) {
     accumulator += dt;
     let steps = 0;
     while (accumulator >= TICK_MS && steps < MAX_STEPS_PER_FRAME) {

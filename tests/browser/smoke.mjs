@@ -72,11 +72,81 @@ try {
   });
   check('FPS overlay is visible on the stage', fpsElVisible);
 
+  // Screenshot helpers (per-phase shots when --shot is passed).
+  const wantShots = process.argv.includes('--shot');
+  function maybeShot(name) {
+    if (!wantShots) return;
+    page.screenshot({ path: path.join(root, 'assets', 'screenshots', name) });
+  }
+
+  // --- UI controls: keyboard shortcuts, brush size, clear/pause/step ---
+  const uiBox = await page.$eval('#sim', (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  });
+
+  // Keyboard element selection: toolbar position 2 -> water (E.WATER === 3).
+  await page.keyboard.press('2');
+  const sel = await page.evaluate(() => window.__sand.state.element);
+  check('keyboard "2" selects water', sel === 3, `element=${sel}`);
+
+  // Paint a blob with the selected element.
+  await page.mouse.move(uiBox.x + uiBox.w * 0.5, uiBox.y + uiBox.h * 0.5);
+  await page.mouse.down();
+  await new Promise((r) => setTimeout(r, 300));
+  await page.mouse.up();
+  const blob = await page.evaluate(() => window.__sand.grid.count(3));
+  check('painting with the selected element works', blob > 0, `water=${blob}`);
+
+  // Brush size keys: [ clamps at min, ] grows.
+  await page.keyboard.press('[');
+  await page.keyboard.press(']');
+  await page.keyboard.press(']');
+  const brush = await page.evaluate(() => window.__sand.state.brushRadius);
+  check('brush size keys adjust the brush (1 -> 3)', brush === 3, `radius=${brush}`);
+
+  // Brush slider present and synced with state.
+  const sliderSync = await page.evaluate(() => {
+    const s = document.getElementById('brush');
+    return s ? Number(s.value) : -1;
+  });
+  check('brush slider present and synced', sliderSync === brush, `slider=${sliderSync}`);
+
+  // Clear button empties the grid.
+  await page.click('#btn-clear');
+  const afterClear = await page.evaluate(() => {
+    const g = window.__sand.grid;
+    let c = 0; for (let i = 0; i < g.cells.length; i++) if (g.cells[i] !== 0) c++;
+    return c;
+  });
+  check('clear button empties the grid', afterClear === 0, `remaining=${afterClear}`);
+
+  // Space pauses: frame counter freezes.
+  await page.keyboard.press('Space');
+  const paused = await page.evaluate(() => window.__sand.state.paused);
+  const f0 = await page.evaluate(() => window.__sand.engine.frame);
+  const pauseLabel = await page.$eval('#btn-pause', (el) => el.textContent);
+  check('space pauses the simulation', paused === true && pauseLabel === 'Resume', `paused=${paused} label=${pauseLabel}`);
+  await new Promise((r) => setTimeout(r, 400));
+  const f1 = await page.evaluate(() => window.__sand.engine.frame);
+  check('frame counter frozen while paused', f1 === f0, `frame ${f0} -> ${f1}`);
+
+  // Step button advances exactly one tick.
+  await page.click('#btn-step');
+  const f2 = await page.evaluate(() => window.__sand.engine.frame);
+  check('step button advances exactly one tick', f2 === f0 + 1, `frame ${f0} -> ${f2}`);
+
+  // Space resumes; the frame counter moves again.
+  await page.keyboard.press('Space');
+  const resumed = await page.evaluate(() => window.__sand.state.paused);
+  await new Promise((r) => setTimeout(r, 400));
+  const f3 = await page.evaluate(() => window.__sand.engine.frame);
+  check('space resumes the simulation', resumed === false && f3 > f2, `paused=${resumed} frame ${f2} -> ${f3}`);
+
   if (process.argv.includes('--interaction')) {
-    const box = await page.$eval('#sim', (el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
-    });
+    const box = uiBox;
+    // Reset element/brush for deterministic interaction phases.
+    await page.evaluate(() => { window.__sand.state.element = 1; window.__sand.state.brushRadius = 1; }); // E.SAND === 1
     // Paint a horizontal line of sand at ~20% height across the middle third.
     const y = box.y + box.h * 0.2;
     await page.mouse.move(box.x + box.w * 0.4, y);
@@ -99,6 +169,7 @@ try {
     });
     check('painted sand falls to the floor and stays there', info.count === painted && info.maxRow === info.h - 1,
       `count=${info.count} maxRow=${info.maxRow}`);
+    maybeShot('task2-sand.png');
 
     // Phase 2: water. Clear, paint a row of water near the top, verify it
     // falls, spreads and levels out on the floor.
@@ -123,6 +194,7 @@ try {
     });
     check('water falls to the floor and is conserved', winfo.count === paintedW && winfo.maxRow === winfo.h - 1,
       `count=${winfo.count} maxRow=${winfo.maxRow} floor=${winfo.floorCount}`);
+    maybeShot('task3-water.png');
 
     // Phase 3: fire. Clear, paint a wood plank, ignite its left end.
     await page.evaluate(() => { window.__sand.state.element = 4; window.__sand.grid.clear(); }); // E.WOOD === 4
@@ -155,11 +227,13 @@ try {
     });
     check('fire ignites the wood and emits smoke', fireInfo.fire > 0 && fireInfo.wood < plank.count && fireInfo.smoke > 0,
       `wood=${fireInfo.wood} fire=${fireInfo.fire} smoke=${fireInfo.smoke}`);
+    maybeShot('task4-fire.png');
   }
 
   // Screenshot for the record.
-  const shotArg = process.argv[2] === '--shot' ? process.argv[3] : null;
-  if (shotArg) {
+  const shotIdx = process.argv.indexOf('--shot');
+  const shotArg = shotIdx !== -1 ? process.argv[shotIdx + 1] : null;
+  if (shotArg && shotArg !== '--interaction') {
     await page.screenshot({ path: path.join(root, 'assets', 'screenshots', shotArg) });
     check(`screenshot saved to assets/screenshots/${shotArg}`, true);
   }

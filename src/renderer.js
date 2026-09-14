@@ -45,13 +45,21 @@ export class Renderer {
     this.octx = this.off.getContext('2d');
     this.img = this.octx.createImageData(w, h);
 
-    // Feature-detect canvas filter support (glow pass is added in a later task).
+    // Second buffer holding only the emissive (fire/lava) halo for the glow pass.
+    this.glow = document.createElement('canvas');
+    this.glow.width = w;
+    this.glow.height = h;
+    this.gctx = this.glow.getContext('2d');
+    this.gimg = this.gctx.createImageData(w, h);
+
+    // Feature-detect canvas filter support (blur for the glow pass).
     this.supportsFilter = typeof this.ctx.filter === 'string';
   }
 
   render(frame) {
     const { cells, life, variation } = this.grid;
     const data = this.img.data;
+    const gdata = this.gimg.data;
     const n = cells.length;
     for (let i = 0, p = 0; i < n; i++, p += 4) {
       const id = cells[i];
@@ -60,8 +68,17 @@ export class Renderer {
       if (id === E.FIRE || id === E.LAVA) {
         // Flicker: index derived from remaining life + frame for a living glow.
         k = (life[i] * 5 + frame * 11 + variation[i]) % pal.length;
+        // Emissive halo buffer: soft orange light around fire/lava.
+        gdata[p] = id === E.FIRE ? 255 : 255;
+        gdata[p + 1] = id === E.FIRE ? 140 : 160;
+        gdata[p + 2] = id === E.FIRE ? 50 : 40;
+        gdata[p + 3] = 96;
       } else {
         k = variation[i] & 7;
+        gdata[p] = 0;
+        gdata[p + 1] = 0;
+        gdata[p + 2] = 0;
+        gdata[p + 3] = 0;
       }
       const c = pal[k];
       data[p] = c[0];
@@ -70,9 +87,25 @@ export class Renderer {
       data[p + 3] = 255;
     }
     this.octx.putImageData(this.img, 0, 0);
+    this.gctx.putImageData(this.gimg, 0, 0);
 
     // Blit the sim-resolution buffer onto the visible canvas (identity transform;
     // CSS scales it up with image-rendering: pixelated for crisp pixels).
     this.ctx.drawImage(this.off, 0, 0);
+
+    // Glow pass: add a blurred halo of emissive cells on top.
+    if (this.supportsFilter) {
+      this.ctx.save();
+      this.ctx.filter = 'blur(2px)';
+      this.ctx.globalCompositeOperation = 'lighter';
+      this.ctx.drawImage(this.glow, 0, 0);
+      this.ctx.restore();
+    } else {
+      // No filter support: unblurred additive halo still reads as glow.
+      this.ctx.save();
+      this.ctx.globalCompositeOperation = 'lighter';
+      this.ctx.drawImage(this.glow, 0, 0);
+      this.ctx.restore();
+    }
   }
 }
