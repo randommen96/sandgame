@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Falling Sand</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230a0c12'/><circle cx='8' cy='10' r='4' fill='%23f0a848'/></svg>" />
+  <link rel="stylesheet" href="src/style.css" />
+</head>
+<body>
+  <header><h1>Falling Sand</h1></header>
+
+  <div id="toolbar"></div>
+
+  <main id="stage">
+    <canvas id="sim" width="200" height="150"></canvas>
+    <span id="fps">-- FPS</span>
+  </main>
+
+  <footer id="help">
+    Click and drag on the canvas to paint. Keys: <b>1–7</b> pick element,
+    <b>[</b>/<b>]</b> brush size, <b>Space</b> pause/step, <b>C</b> clear.
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
