@@ -99,6 +99,30 @@ try {
     });
     check('painted sand falls to the floor and stays there', info.count === painted && info.maxRow === info.h - 1,
       `count=${info.count} maxRow=${info.maxRow}`);
+
+    // Phase 2: water. Clear, paint a row of water near the top, verify it
+    // falls, spreads and levels out on the floor.
+    await page.evaluate(() => { window.__sand.state.element = 3; window.__sand.grid.clear(); }); // E.WATER === 3
+    const y2 = box.y + box.h * 0.15;
+    await page.mouse.move(box.x + box.w * 0.4, y2);
+    await page.mouse.down();
+    for (let i = 1; i <= 25; i++) await page.mouse.move(box.x + box.w * (0.4 + 0.016 * i), y2);
+    await page.mouse.up();
+    const paintedW = await page.evaluate(() => window.__sand.grid.count(3));
+    check('painting created water particles', paintedW > 0, `count=${paintedW}`);
+    await new Promise((r) => setTimeout(r, 4000));
+    const winfo = await page.evaluate(() => {
+      const g = window.__sand.grid;
+      let maxRow = -1, count = 0, floorCount = 0;
+      for (let yy = 0; yy < g.h; yy++) {
+        for (let xx = 0; xx < g.w; xx++) {
+          if (g.cells[yy * g.w + xx] === 3) { count++; if (yy > maxRow) maxRow = yy; if (yy === g.h - 1) floorCount++; }
+        }
+      }
+      return { count, maxRow, floorCount, h: g.h };
+    });
+    check('water falls to the floor and is conserved', winfo.count === paintedW && winfo.maxRow === winfo.h - 1,
+      `count=${winfo.count} maxRow=${winfo.maxRow} floor=${winfo.floorCount}`);
   }
 
   // Screenshot for the record.

@@ -15,9 +15,9 @@
 - [x] Mouse/touch paint interaction (click + drag spawns active element, line interpolation)
 
 ## Task 3: Liquids & Gaseous Elements
-- [ ] Water flows down, spreads sideways, levels out; displaced by denser particles
-- [ ] Smoke/steam gas rises, diffuses around obstacles, dissipates over lifetime
-- [ ] Density-based swap so sand sinks through water/lava
+- [x] Water flows down, spreads sideways, levels out; displaced by denser particles
+- [x] Smoke/steam gas rises, diffuses around obstacles, dissipates over lifetime
+- [x] Density-based swap so sand sinks through water/lava
 
 ## Task 4: Interactive Elements & Reactions (Fire, Wood, Cinder)
 - [ ] Wood: static flammable solid
@@ -40,6 +40,8 @@
 | 2026-09-14 | Task 1: headless Chrome smoke (canvas, 60 FPS, zero console errors) | PASS — screenshot assets/screenshots/task1-initial.png |
 | 2026-09-14 | Task 2: `npm test` (21 unit tests incl. sand gravity / no-double-move / border safety) | PASS |
 | 2026-09-14 | Task 2: browser interaction — painted sand line falls to floor row 149, mass conserved, zero errors | PASS — screenshot assets/screenshots/task2-sand.png |
+| 2026-09-14 | Task 3: `npm test` (26 unit tests incl. water leveling, density sink, gas rise/dissipate) | PASS |
+| 2026-09-14 | Task 3: browser interaction — sand + water phases, conserved counts, zero errors | PASS — screenshot assets/screenshots/task3-water.png |
 
 ## Known Issues
 (none yet)

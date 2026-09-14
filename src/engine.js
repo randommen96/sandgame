@@ -27,6 +27,9 @@ export class Engine {
         if (grid.updated[i]) continue; // already moved this tick
         switch (id) {
           case E.SAND: this.updateSand(x, y, i); break;
+          case E.WATER: this.updateWater(x, y, i); break;
+          case E.SMOKE:
+          case E.STEAM: this.updateGas(x, y, i); break;
           default: break; // static or not-yet-implemented elements do nothing
         }
       }
@@ -50,6 +53,82 @@ export class Engine {
   }
 
   // --- Element updates ---
+
+  // Water: falls (displacing denser particles like sand), slides diagonally,
+  // then spreads horizontally up to 4 cells per tick so pools level out.
+  updateWater(x, y, i) {
+    const grid = this.grid;
+    const w = grid.w;
+    if (y + 1 < grid.h) {
+      const below = i + w;
+      if (this.canEnter(E.WATER, grid.cells[below])) {
+        this.moveTo(i, below);
+        return;
+      }
+      const dir = this.rng() < 0.5 ? -1 : 1;
+      for (const d of [dir, -dir]) {
+        const nx = x + d;
+        if (nx < 0 || nx >= w) continue;
+        const j = below + d;
+        if (this.canEnter(E.WATER, grid.cells[j])) {
+          this.moveTo(i, j);
+          return;
+        }
+      }
+    }
+    // Horizontal dispersion: slide into the farthest empty cell within 4.
+    const dir2 = this.rng() < 0.5 ? -1 : 1;
+    for (const d of [dir2, -dir2]) {
+      let target = -1;
+      for (let s = 1; s <= 4; s++) {
+        const nx = x + d * s;
+        if (nx < 0 || nx >= w) break;
+        if (grid.cells[i + d * s] !== E.EMPTY) break;
+        target = i + d * s;
+      }
+      if (target !== -1) {
+        this.moveTo(i, target);
+        return;
+      }
+    }
+  }
+
+  // Gas (smoke/steam): rises one cell per tick, drifts diagonally at
+  // obstacles, slides sideways along the ceiling. Dissipates over lifetime.
+  updateGas(x, y, i) {
+    const grid = this.grid;
+    const w = grid.w;
+    // Lifetime: decrements once per tick regardless of movement.
+    if (grid.life[i] > 0 && --grid.life[i] === 0) {
+      grid.set(x, y, E.EMPTY);
+      return;
+    }
+    if (y > 0 && grid.cells[i - w] === E.EMPTY) {
+      this.moveTo(i, i - w);
+      return;
+    }
+    const dir = this.rng() < 0.5 ? -1 : 1;
+    for (const d of [dir, -dir]) {
+      const nx = x + d;
+      if (nx < 0 || nx >= w) continue;
+      const j = i - w + d;
+      if (y > 0 && grid.cells[j] === E.EMPTY) {
+        this.moveTo(i, j);
+        return;
+      }
+    }
+    // Sideways drift along the ceiling.
+    const dir2 = this.rng() < 0.5 ? -1 : 1;
+    for (const d of [dir2, -dir2]) {
+      const nx = x + d;
+      if (nx < 0 || nx >= w) continue;
+      const j = i + d;
+      if (grid.cells[j] === E.EMPTY) {
+        this.moveTo(i, j);
+        return;
+      }
+    }
+  }
 
   // Sand: falls straight down; if blocked, slides diagonally into an open
   // below-left/below-right cell (randomized priority to avoid bias).
