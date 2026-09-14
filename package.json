@@ -1,0 +1,15 @@
+{
+  "name": "falling-sand-game",
+  "version": "1.0.0",
+  "description": "Browser-based falling sand physics game (vanilla JS + Canvas)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:browser": "node tests/browser/smoke.mjs",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.11.0",
+    "yauzl": "^3.4.0"
+  }
+}
