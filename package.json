@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test",
     "test:browser": "node tests/browser/smoke.mjs",
+    "validate": "python3 tools/validate_security.py",
     "serve": "python3 -m http.server 8000"
   },
   "devDependencies": {
