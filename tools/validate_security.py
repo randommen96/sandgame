@@ -170,7 +170,7 @@ def nginx_checks() -> None:
     # --- Track 3 directives -------------------------------------------------
     has(r"autoindex\s+off\s*;", "autoindex off")
     check("no 'autoindex on' anywhere", re.search(r"autoindex\s+on", text) is None)
-    dotfile_loc = re.search(r"location\s+~\s+\\\.\(\?!\well-known\)\.\*\s*\{([^}]*)\}", text)
+    dotfile_loc = re.search(r"location\s+~\s+/\\\.\(\?!\well-known\)\.\*\s*\{([^}]*)\}", text)
     check("dotfile blocking location present (\\. except well-known)", dotfile_loc is not None)
     if dotfile_loc:
         body = dotfile_loc.group(1)
@@ -179,9 +179,10 @@ def nginx_checks() -> None:
     has(r"location\s+/\s*\{\s*return\s+404\s*;\s*\}", "default-deny: catch-all location returns 404")
 
     # --- Behavioral simulation of the nginx regexes --------------------------
-    dot_re = re.compile(r"\.(?!well-known).*")
+    dot_re = re.compile(r"/\.(?!well-known).*")
     for path, blocked in [("/.git/HEAD", True), ("/.env", True), ("/.git/config", True),
-                          ("/backup.sql.bak", True), ("/.well-known/acme-challenge/x", False)]:
+                          ("/.backup.sql.bak", True), ("/.well-known/acme-challenge/x", False),
+                          ("/src/style.css", False), ("/assets/screenshots/task1-initial.png", False)]:
         check(f"dotfile rule simulates: {path} -> {'blocked' if blocked else 'allowed'}",
               bool(dot_re.search(path)) == blocked)
 
