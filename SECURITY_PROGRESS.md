@@ -25,21 +25,21 @@ exposing sensitive files, leaking version info, or allowing resource exhaustion.
 - [ ] Baseline committed & pushed
 
 ## Track 1 — Nginx production configuration & secure headers template
-- [ ] `deploy/nginx.conf` supplied (standalone production config for the static site)
-- [ ] Server token masking: `server_tokens off;`
-- [ ] CSP restricting script/style sources to `'self'`
-- [ ] `X-Frame-Options: SAMEORIGIN`
-- [ ] `X-Content-Type-Options: nosniff`
-- [ ] `Referrer-Policy: strict-origin-when-cross-origin`
-- [ ] HSTS (`Strict-Transport-Security`)
-- [ ] Verified locally (config syntax + directive checks) and committed/pushed
+- [x] `deploy/nginx.conf` supplied (standalone production config for the static site)
+- [x] Server token masking: `server_tokens off;`
+- [x] CSP restricting script/style sources to `'self'`
+- [x] `X-Frame-Options: SAMEORIGIN`
+- [x] `X-Content-Type-Options: nosniff`
+- [x] `Referrer-Policy: strict-origin-when-cross-origin`
+- [x] HSTS (`Strict-Transport-Security`)
+- [x] Verified locally (config syntax + directive checks) and committed/pushed
 
 ## Track 2 — Resource constraints & DoS mitigation configs
-- [ ] Request rate limiting: `limit_req_zone` + `limit_req` (+ per-IP connection cap)
-- [ ] Payload boundaries: `client_max_body_size`, `client_body_buffer_size`
-- [ ] Header buffer allocations: `client_header_buffer_size`, `large_client_header_buffers`, timeouts (slowloris mitigation)
-- [ ] HTTP method restriction to GET/HEAD only (`if ($request_method !~ ^(GET|HEAD)$) { return 405; }`)
-- [ ] Verified locally and committed/pushed
+- [x] Request rate limiting: `limit_req_zone` + `limit_req` (+ per-IP connection cap)
+- [x] Payload boundaries: `client_max_body_size`, `client_body_buffer_size`
+- [x] Header buffer allocations: `client_header_buffer_size`, `large_client_header_buffers`, timeouts (slowloris mitigation)
+- [x] HTTP method restriction to GET/HEAD only (`if ($request_method !~ ^(GET|HEAD)$) { return 405; }`)
+- [x] Verified locally and committed/pushed
 
 ## Track 3 — Filesystem protection & exposure minimization
 - [ ] Sensitive dot-file blocking: `location ~ /\.(?!well-known).*` (covers `.git/`, `.env`, backups)
@@ -70,3 +70,6 @@ exposing sensitive files, leaking version info, or allowing resource exhaustion.
 ## Audit log
 | Date | Track | Action | Verification | Result |
 |------|-------|--------|--------------|--------|
+| 2026-09-14 | Phase 1 | Baseline: tracker + `tools/validate_security.py` (structural nginx parser, directive checks, git/permission constraints, bundle/SRI integrity, client safeguards, node --test gate) | validator run: 13/21 pass (failures = pending tracks); `npm test` 34/34 | PASS (baseline) |
+| 2026-09-14 | Track 1 | Added `deploy/nginx.conf`: `server_tokens off`, CSP (script/style `'self'`), XFO SAMEORIGIN, nosniff, Referrer-Policy, HSTS — all with `always` | validator: structural syntax + all 7 header/token checks PASS | PASS |
+| 2026-09-14 | Track 2 | Added rate limiting (`limit_req_zone` 50r/s + `limit_req burst=20 nodelay` + `limit_conn 20/IP`, 429 status), body/header limits (1k body, 8k header buffers), timeouts (10s) + keepalive 15s/100 req, GET/HEAD-only method gate (405) | validator: all Track 2 directive checks PASS; method-regex simulation (GET/HEAD allowed, POST/PUT/DELETE/OPTIONS/PATCH → 405) PASS | PASS |
