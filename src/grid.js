@@ -40,8 +40,16 @@ export class Grid {
     this.variation[i] = variation & 0xff;
   }
 
+  // True when a raw linear index is inside the grid (integer, in [0, n)).
+  inBoundsIdx(i) {
+    return Number.isInteger(i) && i >= 0 && i < this.cells.length;
+  }
+
   // Swap all per-cell state between two indices.
   swap(i, j) {
+    if (!this.inBoundsIdx(i) || !this.inBoundsIdx(j)) {
+      throw new RangeError(`swap out of bounds: (${i}, ${j})`);
+    }
     if (i === j) return;
     const c = this.cells[i]; this.cells[i] = this.cells[j]; this.cells[j] = c;
     const l = this.life[i]; this.life[i] = this.life[j]; this.life[j] = l;

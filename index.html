@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Falling Sand</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230a0c12'/><circle cx='8' cy='10' r='4' fill='%23f0a848'/></svg>" />
-  <link rel="stylesheet" href="src/style.css" />
+  <!-- SRI: subresource integrity pins every loaded asset (manifest:
+       deploy/sri-manifest.json). Tampered or mis-served content is
+       refused by the browser before execution. -->
+  <link rel="stylesheet" href="src/style.css"
+        integrity="sha384-RpfuMZ8nTzuyTN9jJXT9xonp7j/BW71vjo6RdwUeB6Z+I4dr7gd3cO63GtuASraP"
+        crossorigin="anonymous" />
 </head>
 <body>
   <header><h1>Falling Sand</h1></header>
@@ -23,6 +28,8 @@
     While paused, <b>Step</b> advances the simulation one tick.
   </footer>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/main.js"
+          integrity="sha384-oJE3MY2umXwwhU8tTuQ1nQ+KxUr1tV9xTVXSWo/wayV7wCqQY+El1S9HJFeFLIAj"
+          crossorigin="anonymous"></script>
 </body>
 </html>

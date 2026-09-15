@@ -1,5 +1,6 @@
 import { Grid } from './grid.js';
 import { Engine } from './engine.js';
+import { advanceAccumulator } from './pacing.js';
 import { mulberry32 } from './rng.js';
 import { Renderer } from './renderer.js';
 import { buildToolbar, selectElement, setPausedUI, syncBrushSlider, ELEMENT_ORDER, MIN_BRUSH, MAX_BRUSH } from './ui.js';
@@ -8,8 +9,8 @@ import { E, DEFAULT_LIFE } from './elements.js';
 // Fixed simulation resolution; CSS scales it up crisply (image-rendering: pixelated).
 export const SIM_W = 200;
 export const SIM_H = 150;
-const TICK_MS = 1000 / 60; // fixed 60 Hz timestep
-const MAX_STEPS_PER_FRAME = 5; // avoid spiral of death on slow frames
+// Frame pacing (fixed timestep, per-frame step cap, dt clamp) lives in
+// ./pacing.js so it is unit-testable in Node — see tests/safeguards.test.js.
 
 const canvas = document.getElementById('sim');
 const fpsEl = document.getElementById('fps');
@@ -146,19 +147,17 @@ let fpsLast = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
 
-  let dt = now - lastTime;
+  const dt = now - lastTime;
   lastTime = now;
-  if (dt > 250) dt = 250; // tab was hidden — don't fast-forward the world
 
   if (!state.paused) {
-    accumulator += dt;
-    let steps = 0;
-    while (accumulator >= TICK_MS && steps < MAX_STEPS_PER_FRAME) {
-      engine.step();
-      accumulator -= TICK_MS;
-      steps++;
-    }
-    if (steps === MAX_STEPS_PER_FRAME) accumulator = 0; // drop backlog
+    // advanceAccumulator enforces: dt clamp (hidden-tab guard), a hard cap on
+    // catch-up steps per frame (no spiral of death) and backlog drop.
+    const r = advanceAccumulator(accumulator, dt);
+    accumulator = r.accumulator;
+    for (let s = 0; s < r.steps; s++) engine.step();
+  } else {
+    accumulator = 0; // don't bank simulation time while paused
   }
 
   // Keep pouring while the pointer is held (works even while paused).
